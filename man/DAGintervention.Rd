@@ -32,7 +32,7 @@ number of variables which should therefore be limited to around 20 or fewer.
 }
 \examples{
 
-scoreParam <- BiDAG::scoreparameters(8, "bde", BiDAG::Asia)
+scoreParam <- BiDAG::scoreparameters("bde", BiDAG::Asia)
 causalmat <- DAGintervention(BiDAG::Asiamat, scoreParam)
 
 }

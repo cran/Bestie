@@ -21,7 +21,7 @@
 #'
 #' @examples
 #'
-#' scoreParam <- BiDAG::scoreparameters(8, "bde", BiDAG::Asia)
+#' scoreParam <- BiDAG::scoreparameters("bde", BiDAG::Asia)
 #' causalmat <- DAGintervention(BiDAG::Asiamat, scoreParam)
 #'
 #' @export

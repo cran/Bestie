@@ -49,7 +49,7 @@ also offered which reweights a single simulated dataset.
 }
 \examples{
 
-scoreParam <- BiDAG::scoreparameters(8, "bde", BiDAG::Asia)
+scoreParam <- BiDAG::scoreparameters("bde", BiDAG::Asia)
 causalmatMC <- DAGinterventionMC(BiDAG::Asiamat, scoreParam, 1e4)
 
 }
