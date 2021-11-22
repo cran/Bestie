@@ -1,10 +1,10 @@
-a884b001da89300b190da88e667a1a09 *DESCRIPTION
+5419207b853d448c28ae68c1726505af *DESCRIPTION
 5f13d1c954cd60b35d386b79e95d59db *NAMESPACE
 868f1522ca83e58c63b1e8df168ef1d5 *R/RcppExports.R
-f76dc00b019fb843cee1827b72996b7b *R/interventionest.R
-14d1cb0990f07f5aead9d3debd2f6998 *R/interventionestMC.R
-7fa2242ff20ef88b5056e6029973ea7c *R/posteriorparameters.R
-9e6fc20870bb0c1b20611cd1cb3651fe *man/DAGintervention.Rd
-835c1aa55bce6a5381fcedd5cfa319d2 *man/DAGinterventionMC.Rd
-b699a0d6161218b88867ab163456c7b2 *src/RcppExports.cpp
+38ec71c8dffa6be0c11a89141d9da8a2 *R/interventionest.R
+08afe196b7499d6d8a6a0facf3914be3 *R/interventionestMC.R
+ff4c06f1d952a191a530a0362d6f0d25 *R/posteriorparameters.R
+764a095a48faa14897c415be7712858d *man/DAGintervention.Rd
+cd09c34a96f99ec93a3ec7d799272765 *man/DAGinterventionMC.Rd
+0c258dd3a82e9f62601f0f162615bf5f *src/RcppExports.cpp
 8fcb1b3d48f3b98a6a2e325fdd1e795a *src/rcpp_fns.cpp

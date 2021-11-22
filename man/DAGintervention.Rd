@@ -26,9 +26,12 @@ effect on node j of intervening on node i
 \description{
 \code{DAGintervention} takes a DAG or a sampled chain of DAGs (for example from
 the \code{\link[BiDAG]{partitionMCMC}} function of the BiDAG package) and computes the
-intervention effect of each node on all others by exhaustively
-examining all possible binary states. This is exponentially complex in the
-number of variables which should therefore be limited to around 20 or fewer.
+intervention effect of each node on all others. For binary data, this is performed
+by exhaustively examining all possible binary states. This is exponentially complex in the
+number of variables which should therefore be limited to around 20 or fewer. For more
+variables there is a Monte Carlo version \code{\link{DAGinterventionMC}} instead.
+For continuous data, the intervention estimation is performed by extracting the edge coefficients from 
+their posterior distribution and using matrix inversion following arXiv:2010.00684.
 }
 \examples{
 

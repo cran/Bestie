@@ -41,9 +41,10 @@ effect on node j of intervening on node i
 }
 \description{
 \code{DAGinterventionMC} takes a DAG or a sampled chain of DAGs (for example from
-the \code{\link[BiDAG]{partitionMCMC}} function of the BiDAG package) and computes a Monte Carlo
-estimate of the intervention effect of each node on all others by simulating data
-from the DAG. By default each node is intervened upon and the downstream effects
+the \code{\link[BiDAG]{partitionMCMC}} function of the BiDAG package) and computes,
+for binary data, a Monte Carlo estimate of the intervention effect of 
+each node on all others by simulating data from the DAG. 
+By default each node is intervened upon and the downstream effects
 estimated by further sampling. A faster but less robust and accurate version is
 also offered which reweights a single simulated dataset.
 }

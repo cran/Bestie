@@ -2,8 +2,8 @@
 DAGparameters <- function(incidence, dataParams) {
   # add parameters to an incidence matrix
 
-  if (dataParams$type != "bde") {
-    stop("The implementation is currently only for the BDe score.")
+  if (!dataParams$type %in% c("bde", "bge")) {
+    stop("The implementation is currently only for the BDe and BGe score.")
   }
   
   if (dataParams$DBN) {
@@ -19,9 +19,14 @@ DAGparameters <- function(incidence, dataParams) {
     dataParams_first <- dataParams$firstslice
     if(bgn > 0){ # place backgound nodes at the start again
       reorder <- c(1:bgn + nsmall, 1:nsmall)
-      dataParams_first$data <- dataParams_first$data[, reorder]
-      dataParams_first$d1 <- dataParams_first$d1[, reorder]
-      dataParams_first$d0 <- dataParams_first$d0[, reorder]
+      if (dataParams$type == "bde") { # bde score
+        dataParams_first$data <- dataParams_first$data[, reorder]
+        dataParams_first$d1 <- dataParams_first$d1[, reorder]
+        dataParams_first$d0 <- dataParams_first$d0[, reorder]
+      } else { # bge score
+        dataParams_first$TN <- dataParams_first$TN[reorder, reorder]
+      }
+
     }
     params_first <- DAGparameters(incidence[1:n, 1:n], dataParams_first)
 
@@ -31,21 +36,34 @@ DAGparameters <- function(incidence, dataParams) {
     dataParams_other <- dataParams$otherslices
 
     reorder <- c(1:n + nsmall, 1:nsmall) # put them back in order
-    dataParams_other$data <- dataParams_other$data[, reorder]
-    dataParams_other$d1 <- dataParams_other$d1[, reorder]
-    dataParams_other$d0 <- dataParams_other$d0[, reorder]
-        
+    if (dataParams$type == "bde") { # bde score
+      dataParams_other$data <- dataParams_other$data[, reorder]
+      dataParams_other$d1 <- dataParams_other$d1[, reorder]
+      dataParams_other$d0 <- dataParams_other$d0[, reorder]
+    } else { # bge score
+      dataParams_other$TN <- dataParams_other$TN[reorder, reorder]
+    }
+
     params <- DAGparameters(incidence, dataParams_other)
 
 ### Combine parameters from the slices
     
-    allalphas <- params$alphas
-    allalphas[1:n] <- params_first$alphas # update the first slice
-    allbetas <- params$betas
-    allbetas[1:n] <- params_first$betas # update the first slice
-    allpmeans <- params$pmeans
-    allpmeans[1:n] <- params_first$pmeans # update the first slice
-
+    if (dataParams$type == "bde") { # bde score
+      allalphas <- params$alphas
+      allalphas[1:n] <- params_first$alphas # update the first slice
+      allbetas <- params$betas
+      allbetas[1:n] <- params_first$betas # update the first slice
+      allpmeans <- params$pmeans
+      allpmeans[1:n] <- params_first$pmeans # update the first slice
+    } else { # bge score
+      allmus <- params$mus
+      allmus[1:n] <- params_first$mus # update the first slice
+      allsigmas <- params$sigmas
+      allsigmas[1:n] <- params_first$sigmas # update the first slice
+      alldfs <- params$dfs
+      alldfs[1:n] <- params_first$dfs # update the first slice
+    }
+    
 ### Need to unroll the DBN
     
     if (slices > 2) {
@@ -54,13 +72,23 @@ DAGparameters <- function(incidence, dataParams) {
       incidence_unroll <- matrix(0, nbig, nbig)
       incidence_unroll[1:nrow(incidence), 1:ncol(incidence)] <- incidence
 
-      allalphas_unroll <- vector("list", nbig)
-      allbetas_unroll <- vector("list", nbig)
-      allpmeans_unroll <- vector("list", nbig)
-      
-      allalphas_unroll[1:ncol(incidence)] <- allalphas
-      allbetas_unroll[1:ncol(incidence)] <- allbetas
-      allpmeans_unroll[1:ncol(incidence)] <- allpmeans
+      if (dataParams$type == "bde") { # bde score
+        allalphas_unroll <- vector("list", nbig)
+        allbetas_unroll <- vector("list", nbig)
+        allpmeans_unroll <- vector("list", nbig)
+        
+        allalphas_unroll[1:ncol(incidence)] <- allalphas
+        allbetas_unroll[1:ncol(incidence)] <- allbetas
+        allpmeans_unroll[1:ncol(incidence)] <- allpmeans
+      } else { # bge score
+        allmus_unroll <- vector("list", nbig)
+        allsigmas_unroll <- vector("list", nbig)
+        alldfs_unroll <- vector("list", nbig)
+        
+        allmus_unroll[1:ncol(incidence)] <- allmus
+        allsigmas_unroll[1:ncol(incidence)] <- allsigmas
+        alldfs_unroll[1:ncol(incidence)] <- alldfs
+      }
       
       for (ii in 1:(slices - 2)) {
         block_rows <- n - nsmall + 1:(2*nsmall)
@@ -68,10 +96,16 @@ DAGparameters <- function(incidence, dataParams) {
 
         incidence_unroll[block_rows + nsmall*ii, block_cols + nsmall*ii] <- incidence[block_rows, block_cols]
 
-        allalphas_unroll[block_cols + nsmall*ii] <- allalphas[block_cols]
-        allbetas_unroll[block_cols + nsmall*ii] <- allbetas[block_cols]
-        allpmeans_unroll[block_cols + nsmall*ii] <- allpmeans[block_cols]
-        
+        if (dataParams$type == "bde") { # bde score
+          allalphas_unroll[block_cols + nsmall*ii] <- allalphas[block_cols]
+          allbetas_unroll[block_cols + nsmall*ii] <- allbetas[block_cols]
+          allpmeans_unroll[block_cols + nsmall*ii] <- allpmeans[block_cols]
+        } else { # bge score
+          allmus_unroll[block_cols + nsmall*ii] <- allmus[block_cols]
+          allsigmas_unroll[block_cols + nsmall*ii] <- allsigmas[block_cols]
+          alldfs_unroll[block_cols + nsmall*ii] <- alldfs[block_cols]
+        }
+
         if (bgn > 0) { # if there are background nodes, repeat across slices
           block_rows <- 1:bgn
           incidence_unroll[block_rows, block_cols + nsmall*ii] <- incidence[block_rows, block_cols]
@@ -79,34 +113,60 @@ DAGparameters <- function(incidence, dataParams) {
       }
       
       incidence <- incidence_unroll
-      allalphas <- allalphas_unroll
-      allbetas <- allbetas_unroll
-      allpmeans <- allpmeans_unroll
+      
+      if (dataParams$type == "bde") { # bde score
+        allalphas <- allalphas_unroll
+        allbetas <- allbetas_unroll
+        allpmeans <- allpmeans_unroll
+      } else { # bge score
+        allmus <- allmus_unroll
+        allsigmas <- allsigmas_unroll
+        alldfs <- alldfs_unroll
+      }      
+
     }
  
   } else {
   
   n <- nrow(incidence) # number of nodes in DAG
 
-  allalphas <- vector("list", n)
-  allbetas <- vector("list", n)
-  allpmeans <- vector("list", n)
+  if (dataParams$type == "bde") { # bde score
+    allalphas <- vector("list", n)
+    allbetas <- vector("list", n)
+    allpmeans <- vector("list", n)
+  } else { # bge score
+    allmus <- vector("list", n)
+    allsigmas <- vector("list", n)
+    alldfs <- vector("list", n)
+  }
 
   for (j in 1:n) {
     parentNodes <- which(incidence[, j]==1)
     tempResult <- DAGparametersCore(j, parentNodes, dataParams)
-    allalphas[[j]] <- tempResult$alphas
-    allbetas[[j]] <- tempResult$betas
-    allpmeans[[j]] <- tempResult$pmeans
+    if (dataParams$type == "bde") { # bde score
+      allalphas[[j]] <- tempResult$alphas
+      allbetas[[j]] <- tempResult$betas
+      allpmeans[[j]] <- tempResult$pmeans
+    } else { # bge score
+      allmus[[j]] <- tempResult$mus
+      allsigmas[[j]] <- tempResult$sigmas
+      alldfs[[j]] <- tempResult$dfs
+    }
   }
 
   }
   
   posteriorParams <- list()
   posteriorParams$DAG <- incidence
-  posteriorParams$alphas <- allalphas
-  posteriorParams$betas <- allbetas
-  posteriorParams$pmeans <- allpmeans
+  if (dataParams$type == "bde") { # bde score
+    posteriorParams$alphas <- allalphas
+    posteriorParams$betas <- allbetas
+    posteriorParams$pmeans <- allpmeans
+  } else { # bge score
+    posteriorParams$mus <- allmus
+    posteriorParams$sigmas <- allsigmas
+    posteriorParams$dfs <- alldfs
+  }
 
   return(posteriorParams)
 }
@@ -119,7 +179,26 @@ DAGparametersCore <- function(j, parentNodes, param) {
 
   switch(param$type,
     "bge" = {
-      stop("This option is not implemented")
+      coreParams <- list()
+      lp <- length(parentNodes) # number of parents
+      if (lp > 0) {# otherwise no regression coefficients
+        df <- param$awpN - param$n + lp + 1
+        R11 <- param$TN[parentNodes, parentNodes]
+        R12 <- param$TN[parentNodes, j]
+      
+        R11inv <- solve(R11) # could avoid inversions, but here for simplicity
+        mb <- R11inv %*% R12 # mean part
+        divisor <- param$TN[j, j] - R12 %*% mb
+
+        coreParams$mus <- as.vector(mb)
+        coreParams$sigmas <- as.numeric(divisor/df) * R11inv
+        coreParams$dfs <- df
+      } else {
+        coreParams$mus <- NA
+        coreParams$sigmas <- NA
+        coreParams$dfs <- NA
+      }
+      return(coreParams)
     },
     "bde" = {
       lp <- length(parentNodes) # number of parents
@@ -170,19 +249,35 @@ DAGparametersCore <- function(j, parentNodes, param) {
 
 
 
-SampleParameters <- function(DAGparams) {
+SampleParameters <- function(DAGparams, type = "bde") {
   # this function resamples the probability parameters from the posterior beta distributions
+  # or from the posterior edge coefficient distribution
+  # for an unrolled DBN they are sampled at each slice
+  # rather than sampled once and copied over the slices
 
-  sampledps <- DAGparams$pmeans
+  if (type == "bde") {
+    sampledps <- DAGparams$pmeans
+  } else { # bge version
+    sampledps <- DAGparams$mus
+  }
 
   n <- length(sampledps)
 
   for(jj in 1:n){
-    as <- DAGparams$alphas[[jj]]
-    bs <- DAGparams$betas[[jj]]
-    ps <- rep(0,length(as))
-    for(ii in 1:length(as)){
-      ps[ii] <- stats::rbeta(1, as[ii], bs[ii])
+    if (type == "bde") {
+      as <- DAGparams$alphas[[jj]]
+      bs <- DAGparams$betas[[jj]]
+      ps <- rep(0,length(as))
+      for(ii in 1:length(as)){
+        ps[ii] <- stats::rbeta(1, as[ii], bs[ii])
+      }
+    } else { # bge version
+      if (!is.na(DAGparams$dfs[[jj]])) {
+        ps <- mvtnorm::rmvt(1, sigma = as.matrix(DAGparams$sigmas[[jj]]), 
+                                         df = DAGparams$dfs[[jj]], delta = DAGparams$mus[[jj]])
+      } else {
+        ps <- NA
+      }
     }
     sampledps[[jj]] <- ps
   }
