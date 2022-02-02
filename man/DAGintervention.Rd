@@ -4,7 +4,7 @@
 \alias{DAGintervention}
 \title{Exact estimation of intervention effects for a single DAG or a chain of sampled DAGs}
 \usage{
-DAGintervention(incidences, dataParams, sample = TRUE)
+DAGintervention(incidences, dataParams, sample = TRUE, unrollDBN = TRUE)
 }
 \arguments{
 \item{incidences}{a single adjacency matrix of a list of adjacency matrices of
@@ -16,6 +16,9 @@ node i to node j}
 
 \item{sample}{logical indicating whether to sample the parameters of each node
 from the posterior (TRUE, default) or to take the expectation (FALSE)}
+
+\item{unrollDBN}{logical indicating whether to unroll a DBN to a full DAG over
+all time slices (TRUE, default) or to use the compact representation (FALSE)}
 }
 \value{
 a single matrix or a list of matrices containing the full set of

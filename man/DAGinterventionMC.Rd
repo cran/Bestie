@@ -10,7 +10,8 @@ DAGinterventionMC(
   sampleSize,
   sample = TRUE,
   fixNode = TRUE,
-  reducedVarianceSampling = TRUE
+  reducedVarianceSampling = TRUE,
+  unrollDBN = TRUE
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ and resample downstream nodes or to sample once and reweight the sample (FALSE)}
 \item{reducedVarianceSampling}{logical indicating whether to perform Bernoulli
 samping for each node (FALSE) or to sample from a distribution with the same mean
 and lower variance (TRUE, default)}
+
+\item{unrollDBN}{logical indicating whether to unroll a DBN to a full DAG over
+all time slices (TRUE, default) or to use the compact representation (FALSE)}
 }
 \value{
 a single matrix or a list of matrices containing the full set of

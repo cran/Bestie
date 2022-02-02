@@ -1,5 +1,5 @@
 
-DAGparameters <- function(incidence, dataParams) {
+DAGparameters <- function(incidence, dataParams, unrollDBN = TRUE) {
   # add parameters to an incidence matrix
 
   if (!dataParams$type %in% c("bde", "bge")) {
@@ -64,14 +64,18 @@ DAGparameters <- function(incidence, dataParams) {
       alldfs[1:n] <- params_first$dfs # update the first slice
     }
     
-### Need to unroll the DBN
+### Need to unroll the DBN, if more than 2 slices and we choose to unroll
     
-    if (slices > 2) {
+    if (slices > 2 && unrollDBN) {
       nbig <- n + nsmall*(slices - 1)
       
       incidence_unroll <- matrix(0, nbig, nbig)
       incidence_unroll[1:nrow(incidence), 1:ncol(incidence)] <- incidence
-
+      
+      inc_names_unroll <-  paste(rep(colnames(incidence)[bgn+1:nsmall], (slices - 2)), rep(3:slices, each=nsmall), sep="_")
+      colnames(incidence_unroll) <- c(colnames(incidence), inc_names_unroll)
+      rownames(incidence_unroll) <- c(colnames(incidence), inc_names_unroll)
+      
       if (dataParams$type == "bde") { # bde score
         allalphas_unroll <- vector("list", nbig)
         allbetas_unroll <- vector("list", nbig)

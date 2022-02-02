@@ -16,6 +16,8 @@
 #' \code{\link[BiDAG]{scoreparameters}} function of the BiDAG package
 #' @param sample logical indicating whether to sample the parameters of each node
 #' from the posterior (TRUE, default) or to take the expectation (FALSE)
+#' @param unrollDBN logical indicating whether to unroll a DBN to a full DAG over
+#' all time slices (TRUE, default) or to use the compact representation (FALSE)
 #'
 #' @return a single matrix or a list of matrices containing the full set of
 #' intervention effects for each input DAG. Entry [i,j] is the downstream
@@ -31,7 +33,7 @@
 #'
 #' @seealso \code{\link[BiDAG]{scoreparameters}}
 
-DAGintervention <- function(incidences, dataParams, sample = TRUE){
+DAGintervention <- function(incidences, dataParams, sample = TRUE, unrollDBN = TRUE){
   # this wrapper takes in a chain of DAG, computes their parameters and returns all intervention effects
 
   if (!is.list(incidences)) { # turn to list internally
@@ -40,6 +42,10 @@ DAGintervention <- function(incidences, dataParams, sample = TRUE){
 
   n <- ncol(incidences[[1]]) # number of nodes in DAG
   
+  if (dataParams$DBN && unrollDBN) { # number of nodes in DAG from unrolled DBN
+    n <- dataParams$bgn + dataParams$nsmall*dataParams$slices
+  }
+
   if (dataParams$type == "bde") { # only for BDe version
     if (n > 20) {
       warning("Exhaustive enumeration may not be feasible")
@@ -55,7 +61,7 @@ DAGintervention <- function(incidences, dataParams, sample = TRUE){
   interventionMats <- vector("list", numDAGs) # to store the intervention effects
 
   for(kk in 1:numDAGs){
-    DAGparams <- DAGparameters(incidences[[kk]], dataParams)
+    DAGparams <- DAGparameters(incidences[[kk]], dataParams, unrollDBN = unrollDBN)
 
     DAGparamsInternal <- DAGparams
     if (dataParams$type == "bde") { # only for BDe version
@@ -65,12 +71,16 @@ DAGintervention <- function(incidences, dataParams, sample = TRUE){
 
       allLogScores <- BinaryScoreAgainstDAG(DAGparamsInternal, allBinaryVecs)
       interventionMats[[kk]] <- InterventionEstimation(allLogScores, allBinaryVecs)
+      colnames(interventionMats[[kk]]) <- colnames(DAGparamsInternal$DAG)
+      rownames(interventionMats[[kk]]) <- rownames(DAGparamsInternal$DAG)
     } else { # bge version
       if(sample==TRUE){ # then we take a sample of parameters from the posterior instead of taking the expectation
         DAGparamsInternal$mus <- SampleParameters(DAGparams, type = "bge")
       }
       
       interventionMats[[kk]] <- InterventionEstimationBGe(DAGparamsInternal)
+      colnames(interventionMats[[kk]]) <- colnames(DAGparamsInternal$DAG)
+      rownames(interventionMats[[kk]]) <- rownames(DAGparamsInternal$DAG)
     }
   }
 

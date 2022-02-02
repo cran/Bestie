@@ -21,6 +21,8 @@
 #' @param reducedVarianceSampling logical indicating whether to perform Bernoulli
 #' samping for each node (FALSE) or to sample from a distribution with the same mean
 #' and lower variance (TRUE, default)
+#' @param unrollDBN logical indicating whether to unroll a DBN to a full DAG over
+#' all time slices (TRUE, default) or to use the compact representation (FALSE)
 #'
 #' @return a single matrix or a list of matrices containing the full set of
 #' intervention effects for each input DAG. Entry [i,j] is the downstream
@@ -36,7 +38,7 @@
 #'
 #' @seealso \code{\link[BiDAG]{scoreparameters}}
 
-DAGinterventionMC <- function(incidences, dataParams, sampleSize, sample = TRUE, fixNode = TRUE, reducedVarianceSampling = TRUE){
+DAGinterventionMC <- function(incidences, dataParams, sampleSize, sample = TRUE, fixNode = TRUE, reducedVarianceSampling = TRUE, unrollDBN = TRUE){
   # this wrapper takes in a chain of DAG, computes their parameters and returns all MC intervention effects
 
   if (sampleSize < 1e3) {
@@ -56,10 +58,12 @@ DAGinterventionMC <- function(incidences, dataParams, sampleSize, sample = TRUE,
   interventionMats <- vector("list", numDAGs) # to store the intervention effects
 
   for(kk in 1:numDAGs){
-    DAGparams <- DAGparameters(incidences[[kk]], dataParams)
+    DAGparams <- DAGparameters(incidences[[kk]], dataParams, unrollDBN = unrollDBN)
     interventionMats[[kk]] <- DAGinterventionMCparams(DAGparams, sampleSize, sample, fixNode, reducedVarianceSampling)
+    colnames(interventionMats[[kk]]) <- colnames(DAGparams$DAG)
+    rownames(interventionMats[[kk]]) <- rownames(DAGparams$DAG)
   }
-
+  
   if (numDAGs == 1) { # turn back to single matrix
     interventionMats <- interventionMats[[1]]
   }
