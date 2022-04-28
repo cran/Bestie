@@ -6,8 +6,10 @@
 #' by exhaustively examining all possible binary states. This is exponentially complex in the
 #' number of variables which should therefore be limited to around 20 or fewer. For more
 #' variables there is a Monte Carlo version \code{\link{DAGinterventionMC}} instead.
-#' For continuous data, the intervention estimation is performed by extracting the edge coefficients from 
-#' their posterior distribution and using matrix inversion following arXiv:2010.00684.
+#' For continuous data, the intervention estimation is performed by extracting the edge 
+#' coefficients from their posterior distribution and using matrix inversion 
+#' following arXiv:2010.00684. User-defined scores are also supported as long as 
+#' the DAG parameters are analogous to the BDe/BGe cases, see \code{\link{DAGparameters}}. 
 #'
 #' @param incidences a single adjacency matrix of a list of adjacency matrices of
 #' sampled DAGs, with entry [i,j] equal to 1 when a directed edge exists from
@@ -40,13 +42,19 @@ DAGintervention <- function(incidences, dataParams, sample = TRUE, unrollDBN = T
     incidences <- list(incidences)
   }
 
+  if (dataParams$type == "usr"){
+    localtype <- dataParams$pctesttype
+  } else {
+    localtype <- dataParams$type
+  }
+  
   n <- ncol(incidences[[1]]) # number of nodes in DAG
   
   if (dataParams$DBN && unrollDBN) { # number of nodes in DAG from unrolled DBN
     n <- dataParams$bgn + dataParams$nsmall*dataParams$slices
   }
 
-  if (dataParams$type == "bde") { # only for BDe version
+  if (localtype == "bde") { # only for BDe version
     if (n > 20) {
       warning("Exhaustive enumeration may not be feasible")
     }
@@ -64,7 +72,7 @@ DAGintervention <- function(incidences, dataParams, sample = TRUE, unrollDBN = T
     DAGparams <- DAGparameters(incidences[[kk]], dataParams, unrollDBN = unrollDBN)
 
     DAGparamsInternal <- DAGparams
-    if (dataParams$type == "bde") { # only for BDe version
+    if (localtype == "bde") { # only for BDe version
       if(sample==TRUE){ # then we take a sample of parameters from the posterior instead of taking the expectation
         DAGparamsInternal$pmeans <- SampleParameters(DAGparams)
       }

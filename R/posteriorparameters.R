@@ -1,11 +1,52 @@
+#' Augment a DAG with parameters
+#'
+#' \code{DAGparameters} takes a DAG and augments it with parameters.
+#' For binary data these are the parameters of the posterior beta
+#' distributions and its mean. For continuous data, these are parameters 
+#' of the posterior distributions of the edge coefficients from arXiv:2010.00684.
+#' There is support for user-defined augmentation, with the caveat that it
+#' must match the output format of either the binary or continuous cases. 
+#'
+#' @param incidence a single adjacency matrix with entry [i,j] equal to 1 
+#' when a directed edge exists from node i to node j
+#' @param dataParams the data and parameters used to learn the DAGs derived from the
+#' \code{\link[BiDAG]{scoreparameters}} function of the BiDAG package
+#' @param unrollDBN logical indicating whether to unroll a DBN to a full DAG over
+#' all time slices (TRUE, default) or to use the compact representation (FALSE)
+#'
+#' @return the DAG and a list of parameters for each node given
+#' its parents
+#'
+#' @examples
+#'
+#' scoreParam <- BiDAG::scoreparameters("bde", BiDAG::Asia)
+#' AsiaParam <- DAGparameters(BiDAG::Asiamat, scoreParam)
+#'
+#' @export
 
 DAGparameters <- function(incidence, dataParams, unrollDBN = TRUE) {
   # add parameters to an incidence matrix
 
-  if (!dataParams$type %in% c("bde", "bge")) {
-    stop("The implementation is currently only for the BDe and BGe score.")
+  if (dataParams$DBN && !dataParams$type %in% c("bde", "bge")) {
+    stop("The implementation for DBNs is currently only for the BDe and BGe score.")
   }
-  
+
+  bg_flag <- FALSE
+  if (dataParams$type == "usr"){
+    localtype <- dataParams$pctesttype
+    if (!is.null(dataParams$bgremove)){
+      if (dataParams$bgremove && dataParams$bgn > 0) {
+        bg_flag <- TRUE
+      }
+    }
+  } else {
+    localtype <- dataParams$type
+  }
+    
+  if (!localtype %in% c("bde", "bge")) {
+    stop("The implementation is currently only for the BDe and BGe score, or user-defined scores with the same structure.")
+  }
+
   if (dataParams$DBN) {
 
     n <- dataParams$n # number of nodes including background
@@ -134,7 +175,7 @@ DAGparameters <- function(incidence, dataParams, unrollDBN = TRUE) {
   
   n <- nrow(incidence) # number of nodes in DAG
 
-  if (dataParams$type == "bde") { # bde score
+  if (localtype == "bde") { # bde score
     allalphas <- vector("list", n)
     allbetas <- vector("list", n)
     allpmeans <- vector("list", n)
@@ -146,8 +187,12 @@ DAGparameters <- function(incidence, dataParams, unrollDBN = TRUE) {
 
   for (j in 1:n) {
     parentNodes <- which(incidence[, j]==1)
-    tempResult <- DAGparametersCore(j, parentNodes, dataParams)
-    if (dataParams$type == "bde") { # bde score
+    if (dataParams$type == "usr") {
+      tempResult <- usrDAGparametersCore(j, parentNodes, dataParams)
+    } else {
+      tempResult <- DAGparametersCore(j, parentNodes, dataParams)
+    }
+    if (localtype == "bde") { # bde score
       allalphas[[j]] <- tempResult$alphas
       allbetas[[j]] <- tempResult$betas
       allpmeans[[j]] <- tempResult$pmeans
@@ -157,12 +202,26 @@ DAGparameters <- function(incidence, dataParams, unrollDBN = TRUE) {
       alldfs[[j]] <- tempResult$dfs
     }
   }
+  
+  if (bg_flag) { # remove all background nodes
+    to_keep <- setdiff(1:n, dataParams$bgnodes)
+    incidence <- incidence[to_keep, to_keep]
+    if (localtype == "bde") { # bde score
+      allalphas <- allalphas[to_keep]
+      allbetas <- allbetas[to_keep]
+      allpmeans <- allpmeans[to_keep]
+    } else { # bge score
+      allmus <- allmus[to_keep]
+      allsigmas <- allsigmas[to_keep]
+      alldfs <- alldfs[to_keep]
+    }
+  }
 
   }
   
   posteriorParams <- list()
   posteriorParams$DAG <- incidence
-  if (dataParams$type == "bde") { # bde score
+  if (localtype == "bde") { # bde score
     posteriorParams$alphas <- allalphas
     posteriorParams$betas <- allbetas
     posteriorParams$pmeans <- allpmeans
@@ -175,6 +234,15 @@ DAGparameters <- function(incidence, dataParams, unrollDBN = TRUE) {
   return(posteriorParams)
 }
 
+
+usrDAGparametersCore <- function(j, parentNodes, param) {
+  # this is a template function for computing the parameters 
+  # and their posterior distribution. It requires the output
+  # to be in the corresponding BDe or BGe format
+  param$type <- param$pctesttype
+  # for the template we just use the BDe or BGe
+  DAGparametersCore(j, parentNodes, param)
+}
 
 
 DAGparametersCore <- function(j, parentNodes, param) {
@@ -254,8 +322,8 @@ DAGparametersCore <- function(j, parentNodes, param) {
 
 
 SampleParameters <- function(DAGparams, type = "bde") {
-  # this function resamples the probability parameters from the posterior beta distributions
-  # or from the posterior edge coefficient distribution
+  # this function resamples the probability parameters from the posterior 
+  # beta distributions or from the posterior edge coefficient distribution
   # for an unrolled DBN they are sampled at each slice
   # rather than sampled once and copied over the slices
 

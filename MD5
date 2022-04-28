@@ -1,10 +1,11 @@
-0f5e6282e1205068587cd3b04d12827d *DESCRIPTION
-5f13d1c954cd60b35d386b79e95d59db *NAMESPACE
+4a4187eed84fea11a9ea16a92c0b3eec *DESCRIPTION
+99dd68b786213d0841f49c1d581dbc8b *NAMESPACE
 868f1522ca83e58c63b1e8df168ef1d5 *R/RcppExports.R
-d78eb38c36c8ceac87199f5477f0d4eb *R/interventionest.R
+3579622121e0b2e607e45bfdc1fc400d *R/interventionest.R
 350df6ea6b0bf04aa233e2e75323faca *R/interventionestMC.R
-de781fc6eccf53cc775c8d13130aeeab *R/posteriorparameters.R
-7d27a242ccbc88537c8e25491be057c8 *man/DAGintervention.Rd
+39a31767f7c70ee99f8432573deb2eed *R/posteriorparameters.R
+5d5e684882cd0e8f99a00e95d1ea7c05 *man/DAGintervention.Rd
 4c2a4d43d81058cfa932a13eb3437ee6 *man/DAGinterventionMC.Rd
+c73817b2896e3a2d0730b2dd60141fd3 *man/DAGparameters.Rd
 0c258dd3a82e9f62601f0f162615bf5f *src/RcppExports.cpp
 8fcb1b3d48f3b98a6a2e325fdd1e795a *src/rcpp_fns.cpp
